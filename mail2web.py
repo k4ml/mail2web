@@ -119,11 +119,19 @@ def receive_email(file_obj=sys.stdin):
     else:
         return
 
-    base_url = 'http://www.duckduckgo.com/html/'
-    params = {'q': q}
-    logging.info("Params: %s" % params)
-    query_string = urllib.urlencode(params)
-    resp = urllib2.urlopen(base_url + '?' + query_string)
+    base_url = 'https://duckduckgo.com/html/'
+    query_string = ''
+    headers = {'User-Agent': 'Python urllib2'}
+
+    if q.startswith(('http://', 'https://')):
+        req = urllib2.Request(q, query_string, headers)
+    else:
+        params = {'q': q}
+        query_string = urllib.urlencode(params)
+        req = urllib2.Request(base_url, query_string, headers)
+        logging.info("Params: %s" % query_string)
+
+    resp = urllib2.urlopen(req)
     content = resp.read()
 
     msg = MIMEMultipart('alternative')
