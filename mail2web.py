@@ -41,6 +41,7 @@ config = ConfigParser.ConfigParser()
 config.read(os.path.join(HERE, 'config.ini'))
 
 from_addr = config.get('general', 'from_address')
+admin_addr = config.get('general', 'admin_address')
 smtp_host = config.get('smtp', 'host') or 'localhost'
 smtp_username = config.get('smtp', 'username') or None
 smtp_password = config.get('smtp', 'password') or None
@@ -63,7 +64,7 @@ def send_error(e, exc_info):
     exc_class, exc, tb = exc_info
     msg = MIMEText("Error: %s %s" % (str(exc_info), traceback.format_tb(tb)))
     msg['Subject'] = 'Error parsing email'
-    msg['To'] = from_addr
+    msg['To'] = admin_addr
     send_email(msg, msg['To'])
 
 def get_data(msg):
