@@ -32,9 +32,13 @@ from email.mime.text import MIMEText
 from datetime import timedelta
 
 HERE = os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(HERE, 'vendor'))
+
+import requests
 
 log_file = os.path.join(HERE, 'log.txt')
-logging.basicConfig(filename=log_file, level=logging.DEBUG)
+logging.basicConfig(filename=log_file, level=logging.DEBUG,
+                    format='%(asctime)s %(message)s')
 logging.info('Start')
 
 config = ConfigParser.ConfigParser()
@@ -124,15 +128,11 @@ def receive_email(file_obj=sys.stdin):
     headers = {'User-Agent': 'Python urllib2'}
 
     if q.startswith(('http://', 'https://')):
-        req = urllib2.Request(q, query_string, headers)
+        resp = requests.get(q, headers=headers)
     else:
         params = {'q': q}
-        query_string = urllib.urlencode(params)
-        req = urllib2.Request(base_url, query_string, headers)
-        logging.info("Params: %s" % query_string)
-
-    resp = urllib2.urlopen(req)
-    content = resp.read()
+        resp = requests.get(base_url, params=params, headers=headers)
+        logging.info("Params: %s" % params)
 
     msg = MIMEMultipart('alternative')
     msg['Subject'] = "RE: %s" % q[0:80]
@@ -143,7 +143,7 @@ def receive_email(file_obj=sys.stdin):
 
     # Record the MIME types of both parts - text/plain and text/html.
     part1 = MIMEText('You must enable HTML', 'plain')
-    part2 = MIMEText(content, 'html')
+    part2 = MIMEText(resp.content, 'html')
 
     # Attach parts into message container.
     # According to RFC 2046, the last part of a multipart message, in this case
