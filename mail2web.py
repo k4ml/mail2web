@@ -104,6 +104,7 @@ def receive_email(file_obj=sys.stdin):
     q = ''
     try:
         msg = email.message_from_string(file_obj.read())
+        logging.info("Read email")
     except Exception as e:
         logging.info(str(e))
         exc_info = sys.exc_info()
@@ -111,16 +112,19 @@ def receive_email(file_obj=sys.stdin):
 
     try:
         data = get_data(msg)
+        logging.info("Parsed email")
     except Exception as e:
         logging.info(str(e))
         exc_info = sys.exc_info()
         return send_error(e, exc_info)
 
+    logging.info(data)
     if data['body'] != '':
         q = data['body'].strip()
     elif data['subject'] != '':
         q = data['subject'].strip()
     else:
+        logging.info("No data")
         return
 
     base_url = 'https://duckduckgo.com/html/'
@@ -134,6 +138,7 @@ def receive_email(file_obj=sys.stdin):
         resp = requests.get(base_url, params=params, headers=headers)
         logging.info("Params: %s" % params)
 
+    logging.info("Done query")
     msg = MIMEMultipart('alternative')
     msg['Subject'] = "RE: %s" % q[0:80]
     msg['From'] = from_addr
