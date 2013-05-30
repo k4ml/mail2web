@@ -29,6 +29,7 @@ import urllib2
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import parseaddr
 from datetime import timedelta
 
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -46,6 +47,7 @@ config.read(os.path.join(HERE, 'config.ini'))
 
 from_addr = config.get('general', 'from_address')
 admin_addr = config.get('general', 'admin_address')
+debug_addr = config.get('general', 'debug_address')
 smtp_host = config.get('smtp', 'host') or 'localhost'
 smtp_username = config.get('smtp', 'username') or None
 smtp_password = config.get('smtp', 'password') or None
@@ -102,8 +104,9 @@ def receive_email(file_obj=sys.stdin):
     subject = ''
     body = ''
     q = ''
+    email_text = file_obj.read()
     try:
-        msg = email.message_from_string(file_obj.read())
+        msg = email.message_from_string(email_text)
         logging.info("Read email")
     except Exception as e:
         logging.info(str(e))
@@ -117,6 +120,15 @@ def receive_email(file_obj=sys.stdin):
         logging.info(str(e))
         exc_info = sys.exc_info()
         return send_error(e, exc_info)
+
+    if parseaddr(data['to'])[1] == debug_addr:
+        try:
+            open(os.path.join(HERE, 'data/incoming.txt'), 'w').write(email_text)
+            logging.info("Debug email, save to data/incoming.txt")
+        except Exception as e:
+            logging.info("Failed saving incoming: %s" % str(e))
+
+        return
 
     logging.info(data)
     if data['body'] != '':
